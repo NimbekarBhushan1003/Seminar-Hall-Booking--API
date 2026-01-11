@@ -60,7 +60,7 @@ def get_available_halls(capacity, start, end):
     return available
 
 
-# ---------- BOOK BEST FIT ----------
+# ---------- BOOK BEST FIT (ONLY BOOKS, RETURNS STRING) ----------
 def book_best_fit_hall(capacity, start, end):
     available = get_available_halls(capacity, start, end)
     if not available:
@@ -80,3 +80,32 @@ def book_best_fit_hall(capacity, start, end):
     conn.close()
 
     return hall_name
+
+
+# ---------- BOOK + RETURN DETAILS (USED BY API) ----------
+def book_and_return_details(capacity, start, end):
+    available = get_available_halls(capacity, start, end)
+
+    if not available:
+        return {
+            "bookedHall": None,
+            "availableHalls": []
+        }
+
+    booked_hall = available[0]
+    hall_capacity = next(h["capacity"] for h in HALLS if h["name"] == booked_hall)
+    booking_id = str(uuid.uuid4())[:8]
+
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO BOOKING VALUES (?, ?, ?, ?, ?)",
+        (booking_id, booked_hall, hall_capacity, start, end)
+    )
+    conn.commit()
+    conn.close()
+
+    return {
+        "bookedHall": booked_hall,
+        "availableHalls": available
+    }

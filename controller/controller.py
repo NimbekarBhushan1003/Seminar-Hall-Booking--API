@@ -46,18 +46,28 @@ def book_seminar_hall():
         if capacity > 1000:
             raise ValueError("No hall can accommodate more than 1000 people")
 
-        booked_hall = service.book_best_fit_hall(capacity, start_time, end_time)
+        # calculate availability first
+        available_halls = service.get_available_halls(capacity, start_time, end_time)
 
-        if not booked_hall:
-            resp["response"] = []
-            resp["status"] = SUCCESS_STATUS
-            resp["error"] = "No halls available for the given slot"
-        else:
+        if not available_halls:
             resp["response"] = {
-                "bookedHall": booked_hall,
-                "availableHalls": service.get_available_halls(capacity, start_time, end_time)
+                "bookedHall": None,
+                "availableHalls": []
             }
             resp["status"] = SUCCESS_STATUS
+            return jsonify(resp), 200
+
+        # best-fit hall
+        booked_hall = available_halls[0]
+
+        # insert booking
+        service.book_best_fit_hall(capacity, start_time, end_time)
+
+        resp["response"] = {
+            "bookedHall": booked_hall,
+            "availableHalls": available_halls
+        }
+        resp["status"] = SUCCESS_STATUS
 
         return jsonify(resp), 200
 
